@@ -8,6 +8,7 @@ const posix = std.posix;
 const mem = std.mem;
 const assert = std.debug.assert;
 const queue = @import("../queue.zig");
+const buffer_limit = @import("../io.zig").buffer_limit;
 
 // TODO start with sockets only than see how to handle
 // files and other io operation
@@ -266,6 +267,76 @@ pub const IO = struct {
             },
         );
     }
+
+    pub const RecvError = posix.RecvFromError;
+
+    // Tigerbeetle recv
+    pub fn recv(
+        self: *IO,
+        comptime Context: type,
+        context: Context,
+        comptime callback: fn (
+            context: Context,
+            completion: *Completion,
+            result: RecvError!usize,
+        ) void,
+        completion: *Completion,
+        socket: posix.socket_t,
+        buffer: []u8,
+    ) void {
+        self.submit(
+            context,
+            callback,
+            completion,
+            .recv,
+            .{
+                .socket = socket,
+                .buf = buffer.ptr,
+                .len = @as(u32, @intCast(buffer_limit(buffer.len))),
+            },
+            struct {
+                fn do_operation(op: anytype) RecvError!usize {
+                    return posix.recv(op.socket, op.buf[0..op.len], 0);
+                }
+            },
+        );
+    }
+
+    pub const SendError = posix.SendError;
+
+    // Tigerbeetle send
+    pub fn send(
+        self: *IO,
+        comptime Context: type,
+        context: Context,
+        comptime callback: fn (
+            context: Context,
+            completion: *Completion,
+            result: SendError!usize,
+        ) void,
+        completion: *Completion,
+        socket: posix.socket_t,
+        buffer: []const u8,
+    ) void {
+        self.submit(
+            context,
+            callback,
+            completion,
+            .send,
+            .{
+                .socket = socket,
+                .buf = buffer.ptr,
+                .len = @as(u32, @intCast(buffer_limit(buffer.len))),
+            },
+            struct {
+                fn do_operation(op: anytype) SendError!usize {
+                    return posix.send(op.socket, op.buf[0..op.len], 0);
+                }
+            },
+        );
+    }
+
+    pub const INVALID_SOCKET = -1;
 
     /// This struct holds the data needed for a single IO operation
     pub const Completion = struct {

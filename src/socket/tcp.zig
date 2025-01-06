@@ -45,11 +45,20 @@ pub const TCP = struct {
         self.io.close_socket(self.fd);
     }
 
+    /// Just a wrapper for the underlying IO struct accept call
     pub fn accept(self: *Self, comptime Context: anytype, context: Context, callback: fn (
         context: Context,
         completion: *IO.Completion,
         result: IO.AcceptError!posix.socket_t,
     ) void, accept_completion: *IO.Completion) void {
         self.io.accept(Context, context, callback, accept_completion, self.fd);
+    }
+
+    pub fn recv(self: *Self, comptime Context: anytype, context: Context, callback: fn (
+        context: Context,
+        completion: *IO.Completion,
+        result: IO.RecvError!posix.socket_t,
+    ) void, recv_completion: *IO.Completion, buffer: []u8) void {
+        self.io.recv(Context, context, callback, recv_completion, self.fd, buffer);
     }
 };

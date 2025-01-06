@@ -9,5 +9,5 @@
 
 # Alternative Idea
 
-- Currently adopting some of libxev and tigerbeetles event loop ideas. 
+- Currently adopting some of libxev and tigerbeetles event loop codes.
 - Could eventually try do something similar with just zigs async, await, suspend and resume.

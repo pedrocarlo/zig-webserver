@@ -13,3 +13,17 @@ pub const IO = switch (builtin.target.os.tag) {
     else => @compileError("IO is not supported for platform"),
 };
 
+// Tigerbeetle code
+pub fn buffer_limit(buffer_len: usize) usize {
+    // Linux limits how much may be written in a `pwrite()/pread()` call, which is `0x7ffff000` on
+    // both 64-bit and 32-bit systems, due to using a signed C int as the return value, as well as
+    // stuffing the errno codes into the last `4096` values.
+    // Darwin limits writes to `0x7fffffff` bytes, more than that returns `EINVAL`.
+    // The corresponding POSIX limit is `std.math.maxInt(isize)`.
+    const limit = switch (builtin.target.os.tag) {
+        .linux => 0x7ffff000,
+        .macos, .ios, .watchos, .tvos => std.math.maxInt(i32),
+        else => std.math.maxInt(isize),
+    };
+    return @min(limit, buffer_len);
+}
